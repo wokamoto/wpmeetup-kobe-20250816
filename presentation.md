@@ -1,5 +1,5 @@
 ---
-title: WordPress CI/CD入門
+title: WordPress CI/CD 入門
 author: wokamoto
 marp: true
 theme: gaia
@@ -22,7 +22,7 @@ style: |
 markdown:
   marp:
     breaks: true
-header: "**WordPress CI/CD入門**"
+header: "**WordPress CI/CD 入門**"
 #footer: "Kansai WordPress Meetup@KOBE 2025年8月16日"
 ---
 <!-- paginate: skip -->
@@ -30,8 +30,8 @@ header: "**WordPress CI/CD入門**"
 ![bg opacity:.25 30%](./marinwapuu.png)
 
 <!-- Title Slide -->
-# WordPress CI/CD入門
-**～GitHub ActionsとAWS CodePipelineで実現する自動デプロイ～**
+# WordPress CI/CD 入門
+**～ GitHub Actions と AWS CodePipeline で実現する自動デプロイ～**
 <br>
 <br>
 **岡本 渉** | Kansai WordPress Meetup@KOBE
@@ -72,7 +72,7 @@ header: "**WordPress CI/CD入門**"
 ---
 
 ### よくあるトラブル
-- `style.css`や`functions.php`が壊れて真っ白
+- `style.css` や `functions.php` が壊れて真っ白
 - 一部ファイルだけアップされず不具合に気づけない
 - 差分の管理が手動で非効率
 
@@ -80,6 +80,7 @@ header: "**WordPress CI/CD入門**"
 
 ### 問題の本質
 - バージョン管理がない（Git未使用）
+- ステージング環境と本番環境のソースコードが同一である保証が無い
 - 作業の履歴が残らない（誰が何をしたかわからない）
 - 作業者ごとに手順が異なり属人化
 
@@ -89,8 +90,8 @@ header: "**WordPress CI/CD入門**"
 ![bg opacity:.2 80%](./github_actions.png)
 
 ### GitHub Actionsとは？
-- GitHubに標準搭載されているCI/CD機能
-- YAMLファイルで処理を記述し、Pushなどをトリガーに実行
+- GitHub に標準搭載されている CI/CD 機能
+- YAML ファイルで処理を記述し、Push などをトリガーに実行
 - サーバーへのデプロイ、Lint、テストなど自由に設定可能
 
 ---
@@ -214,24 +215,30 @@ on:
 ---
 
 ## Secrets
-- `SSH_PRIVATE_KEY_STAGING` : SSH接続に使用する鍵
-- `STAGING_SERVER_HOST` : SSH接続先のサーバ名
-- `STAGING_SERVER_USER` : SSH接続時のユーザ名
-- `STAGING_WEB_DOC_ROOT` : ウェブドキュメントルートのパス ( `/var/www/html` など )
+- `SSH_PRIVATE_KEY_STAGING` : (STG環境) SSH接続に使用する鍵
+- `STAGING_SERVER_HOST` : (STG環境) SSH接続先のサーバ名
+- `STAGING_SERVER_USER` : (STG環境) SSH接続時のユーザ名
+- `STAGING_WEB_DOC_ROOT` : (STG環境) ウェブドキュメントルート
+- `SSH_PRIVATE_KEY_PRODUCTION` : (本番環境) SSH接続に使用する鍵
+- `PRODUCTION_SERVER_HOST` : (本番環境) SSH接続先のサーバ名
+- `PRODUCTION_SERVER_USER` : (本番環境) SSH接続時のユーザ名
+- `PRODUCTION_WEB_DOC_ROOT` : (本番環境) ウェブドキュメントルート
 
 ---
 
 <!-- GH Actions Demo Placeholder -->
 ## GitHub Actions でのデプロイのデモ 
 
+https://github.com/wokamoto/wp_cicd_sample_gha
+
 ---
 
 ![bg opacity:.2 80%](./awscodepipeline.png)
 <!-- AWS Overview 1 -->
 ## AWS CodePipeline とは？
-- AWSが提供するCI/CD自動化サービス
-- GitHubやCodeCommitなどをソースに、CodeBuildで処理、CodeDeployでEC2やS3にデプロイ
-- GUIでのフロー設計が可能で、視覚的にわかりやすい
+- AWSが提供する CI/CD 自動化サービス
+- GitHub や CodeCommit などをソースに、CodeBuild で処理、CodeDeploy でEC2やS3にデプロイ
+- GUI でのフロー設計が可能で、視覚的にわかりやすい
 - ステージング／本番で別パイプライン運用推奨  
 - 各ステージごとに通知・承認可 
 
@@ -322,6 +329,8 @@ echo "Cleanup completed successfully."
 <!-- AWS Demo Placeholder -->
 ## AWS CodePipeline でのデプロイのデモ 
 
+https://github.com/wokamoto/wp_cicd_sample_codepipeline
+
 ---
 
 <!-- Comparison & Best Practices -->
@@ -329,10 +338,10 @@ echo "Cleanup completed successfully."
 
 | 比較項目             | GitHub Actions                          | AWS CodePipeline                         |
 |----------------------|-----------------------------------------|-------------------------------------------|
-| 設定のしやすさ       | YAMLで簡単に開始                         | IAM・Secrets設定が必要                    |
-| 可視化               | ログと履歴がテキスト中心                | GUIでステージや失敗原因が見やすい        |
-| AWS連携              | 外部からの接続（SSH等）で対応            | IAMロール・CodeDeployでAWSリソースと統合 |
-| 環境の切り替え       | ブランチ名などで柔軟に分岐               | 複数Pipeline or CodeBuild条件で制御       |
+| 設定のしやすさ       | YAMLで簡単に開始                         | IAM・Secrets 設定が必要                    |
+| 可視化               | ログと履歴がテキスト中心                | GUI でステージや失敗原因が見やすい        |
+| AWS連携              | 外部からの接続（SSH等）で対応            | IAMロール・CodeDeploy でAWSリソースと統合 |
+| 環境の切り替え       | ブランチ名などで柔軟に分岐               | 複数 Pipeline or CodeBuild 条件で制御       |
 
 ---
 
@@ -342,7 +351,7 @@ echo "Cleanup completed successfully."
 |------------------|------------------------------|------------------------------------|
 | 作業効率         | 手作業・属人的                | 自動化・手順不要                   |
 | 安全性           | 上書き・操作ミスのリスク大    | ブランチ管理・自動処理で安全       |
-| 履歴管理         | なし                          | GitログとCIログで追跡可能          |
+| 履歴管理         | なし                          | Git ログと CI ログで追跡可能          |
 | 確認・承認       | 口頭ベース・曖昧              | ステージング後に本番マージで管理   |
 
 ---
@@ -353,28 +362,28 @@ echo "Cleanup completed successfully."
 - サーバーはSSHで接続可能か
 - `.gitignore`で必要ファイルが除外されていないか
 - `wp-config.php`や環境設定が分離できているか
-- Secretsの共有方法はチーム内で決まっているか
+- Secrets の共有方法はチーム内で決まっているか
 
 ---
 
 ### ⚠️ ハマりがちなポイント
-- `.gitignore`で必要ファイルが除外されている
-- rsync先のパーミッション設定忘れ
-- Secretsに鍵を入れ忘れて失敗
-- サーバーのSSH設定で「接続拒否」される
+- `.gitignore` で必要ファイルが除外されている
+- rsync 先のパーミッション設定忘れ
+- Secrets に鍵を入れ忘れて失敗
+- サーバーの SSH 設定で「接続拒否」される
 
 ---
 
 ### 🤝 チームでの運用ポイント
 - デプロイルールと運用ドキュメントの整備
-- Slackなどで通知を送る仕組みを追加
+- Slack などで通知を送る仕組みを追加
 - Pull Request → マージ → 自動デプロイの文化を作る
 
 ---
 
 <!-- Summary & Q&A -->
 ## まとめ＆Q&A  
-- CI/CDを導入すると「安全・高速・安心」の3拍子が揃う
+- CI/CD を導入すると「安全・高速・安心」の3拍子が揃う
 - 属人性の排除、履歴管理、作業の一貫性が生まれる
 - GitHub Actions と AWS CodePipeline の特性把握  
 - まずはステージング導入からスタート！  
@@ -384,4 +393,4 @@ echo "Cleanup completed successfully."
 ## これから導入したい方へ
 - 最初はステージングのみで試験導入からでもOK
 - 無料枠でも十分な範囲で構築可能
-- 小さな一歩から、安全なWordPress運用をはじめよう！
+- 小さな一歩から、安全な WordPress　運用をはじめよう！
