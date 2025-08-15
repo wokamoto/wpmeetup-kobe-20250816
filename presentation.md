@@ -34,11 +34,25 @@ header: "**WordPress CI/CD 入門**"
 **～ GitHub Actions と AWS CodePipeline で実現する自動デプロイ～**
 <br>
 <br>
-**岡本 渉** | Kansai WordPress Meetup@KOBE
+**[岡本 渉](https://www.threads.com/@wokamoto1973)** | Kansai WordPress Meetup@KOBE
 2025年8月16日 
 
 ---
 <!-- paginate: true -->
+![bg left:40%](./to_all_working_people.jpg)
+
+## 自己紹介
+
+* 好きな言葉
+  * Infrastructure as Code
+  * 冪等性
+* 大体ビールを呑んでいます
+  * WordCamp Kansai 2024 ビアスポンサー
+* SNS
+  * X ([@wokamoto](https://x.com/wokamoto))
+  * Threads ([@wokamoto1973](https://www.threads.com/@wokamoto1973))
+
+---
 ![bg opacity:.25 30%](./marinwapuu.png)
 
 <!-- Agenda -->
@@ -52,6 +66,7 @@ header: "**WordPress CI/CD 入門**"
 7. まとめ＆Q&A  
 
 ---
+![bg opacity:.25 30%](./marinwapuu.png)
 
 <!-- CI/CD Basics 1 -->
 ## CI/CD とは？
@@ -148,28 +163,6 @@ jobs:
     - name: PHP Syntax Check
       uses: ./.github/actions/php-syntax-check
 ```
-<!--
-  deploy:
-    needs: test
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-    - name: Set up SSH
-      uses: webfactory/ssh-agent@v0.9.0
-      with:
-        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_STAGING }}
-    - name: Rsync files to Staging
-      run: |
-        SSH_HOST="${{ secrets.STAGING_SERVER_HOST }}"
-        SSH_USER="${{ secrets.STAGING_SERVER_USER }}"
-        WEB_DOC_ROOT="${{ secrets.STAGING_WEB_DOC_ROOT }}/"
-        rsync -avzc --delete --exclude='.*' \
-         --exclude wp-config.php \
-         --exclude wp-content/uploads/ \
-         -e "ssh -o StrictHostKeyChecking=no" \
-         ./ "${SSH_USER}"@"${SSH_HOST}":"${WEB_DOC_ROOT}"
--->
 
 ---
 
@@ -255,20 +248,15 @@ https://github.com/wokamoto/wp_cicd_sample_gha
 ## buildspec.yml (共通)
 ```yaml
 version: 0.2
-
 phases:
   build:
     commands:
-      - echo Running tests...
-      - find . -name "*.php" -print0 | xargs -0 -n1 php -l
-  post_build:
-    commands:
-      - echo Packaging artifacts...
-      - zip -r artifact.zip .
-
+      - chmod +x scripts/*.sh || true
 artifacts:
   files:
-    - artifact.zip
+    - appspec.yml
+    - scripts/**/*
+    - dest/**/*
 ```
 
 ---
@@ -279,8 +267,8 @@ artifacts:
 version: 0.0
 os: linux
 files:
-  - source: artifact.zip
-    destination: /var/www/html.source
+  - source: dest
+    destination: /var/www/html/source
 hooks:
   AfterInstall:
     - location: scripts/source_sync.sh
@@ -292,36 +280,26 @@ hooks:
 
 ## scripts/source_sync.sh (共通)
 ```bash
-#!/bin/bash
-set -eo pipefail
+#!/usr/bin/env bash
+set -euo pipefail
 
-# Directory where WordPress is deployed
-DEPLOY_DIR="/var/www/html"
-ARTIFACT="$DEPLOY_DIR.source/artifact.zip"
+DEST_DIR="/var/www/html"
+RELEASES_DIR="$DEST_DIR/releases"
+CURRENT_LINK="$DEST_DIR/current"
+SRC_DIR="$DEST_DIR/source"
+NGINX_USER="nginx"
+NGINX_GROUP="nginx"
 
-# source sync
-echo "Starting source sync..."
-rsync -avzc --delete --exclude='.*' \
-  --exclude artifact.zip \
-  --exclude wp-config.php \
-  --exclude wp-content/uploads/ \
-  "$DEPLOY_DIR.source/" "$DEPLOY_DIR"
+EXCLUDES=(
+  "--exclude" "wp-content/uploads/"
+  "--exclude" "wp-config.php"
+)
 
-echo "Starting post-deploy cleanup..."
-
-# Remove the deployment artifact if it exists
-if [ -d "$DEPLOY_DIR.source" ]; then
-  rm -rf "$DEPLOY_DIR.source"
-  echo "Removed artifact"
-fi
-
-# Reset ownership and permissions
-echo "Setting correct ownership and permissions..."
-chown -R apache:www "$DEPLOY_DIR"
-find "$DEPLOY_DIR" -type d -exec chmod 755 {} \;
-find "$DEPLOY_DIR" -type f -exec chmod 644 {} \;
-
-echo "Cleanup completed successfully."
+mkdir -p "$RELEASES_DIR"
+TIMESTAMP="$(date '+%Y%m%d%H%M%S')"
+RELEASE_DIR="$RELEASES_DIR/$TIMESTAMP"
+mkdir -p "$RELEASE_DIR"
+ :
 ```
 
 ---
